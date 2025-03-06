@@ -12,6 +12,7 @@ public class HeatingReportApplication {
 		dotenv.entries().forEach(entry -> {
 			System.setProperty(entry.getKey(), entry.getValue());
 		});
+		System.out.println(1234);
 	}
 
 	public static void main(String[] args) {
