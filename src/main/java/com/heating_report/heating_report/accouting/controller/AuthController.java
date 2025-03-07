@@ -43,13 +43,23 @@ public class AuthController {
     }
 
     @PostMapping("/registration")
-    public UserDto registerUser(@RequestBody UserRegistrationDto data, HttpServletResponse response) throws IOException {
-        return userAccountService.registerUser(data);
+    public ResponseEntity<UserDto> registerUser(@Valid @RequestBody UserRegistrationDto data, HttpServletResponse response) {
+        UserDto userResponseDto = null;
+        try {
+            userResponseDto = userAccountService.registerUser(data);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        response.addCookie(authService.createAccessTokenCookie(userResponseDto.getUsername()));
+        response.addCookie(authService.createRefreshToken(userResponseDto.getUsername()));
+        return ResponseEntity.status(HttpStatus.CREATED).body(userResponseDto);
     }
 
     @PostMapping("/login")
     public ResponseEntity<UserDto> loginUser(@Valid @RequestBody UserLoginDto data, HttpServletResponse response) {
         UserDto userResponseDto = userAccountService.loginUser(data);
+        response.setHeader("Set-Cookie", "accessToken=yourToken; Path=/; HttpOnly; Secure; SameSite=None");
+
         response.addCookie(authService.createAccessTokenCookie(userResponseDto.getUsername()));
         response.addCookie(authService.createRefreshToken(userResponseDto.getUsername()));
         return ResponseEntity.ok(userResponseDto);

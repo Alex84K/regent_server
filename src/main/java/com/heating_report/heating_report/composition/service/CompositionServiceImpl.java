@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
+import java.util.Optional;
 
 @CrossOrigin
 @Service
@@ -30,10 +31,19 @@ public class CompositionServiceImpl implements CompositionService{
 
     @Override
     public CompositionDto addComposition(NewCompositionDto dto) {
+        // Проверяем, существует ли такая композиция
+        Optional<Composition> existingComposition = compositionRepository.findByBookAndNumber(dto.getBook(), dto.getNumber());
+        if (existingComposition.isPresent()) {
+            throw new IllegalArgumentException("Composition with book '" + dto.getBook() +
+                    "' and number '" + dto.getNumber() + "' already exists.");
+        }
+        // Если не существует — создаём новую
         Composition composition = modelMapper.map(dto, Composition.class);
         compositionRepository.save(composition);
+
         return modelMapper.map(composition, CompositionDto.class);
     }
+
 
     @Override
     public CompositionDto getCompositionById(String id) {
@@ -73,6 +83,13 @@ public class CompositionServiceImpl implements CompositionService{
             // Ловим все остальные исключения и возвращаем HTTP 400 с сообщением об ошибке
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid request data", e);
         }
+    }
+
+    @Override
+    public Iterable<CompositionDto> getAllCompositions() {
+        return compositionRepository.findAll().stream()// Фильтруем по имени (без учета регистра)
+                .map(composition -> modelMapper.map(composition, CompositionDto.class))
+                .toList();
     }
 
     @Override

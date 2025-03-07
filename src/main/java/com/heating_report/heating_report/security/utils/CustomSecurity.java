@@ -15,7 +15,7 @@ public class CustomSecurity {
 
     private final UserRepository userRepository;
 
-    public boolean hasUserAccessToUserId(String userName, String userId) {
+    public boolean hasUserAccessToUserId(String userName, Integer userId) {
         UserAccount userAccount = userRepository.findByUsernameIgnoreCase(userName).orElse(null);
         return userAccount != null && userAccount.getUserId().equals(userId);
     }

@@ -13,6 +13,8 @@ public interface CompositionService {
     CompositionDto deleteCompositionById(String id);
     CompositionDto updateComposition(UpdateCompositionDto dto);
 
+    Iterable<CompositionDto> getAllCompositions();
+
     Iterable<CompositionDto> getCompositionByName(String name);
     Iterable<CompositionDto> getCompositionByTheme(String theme);
     Iterable<CompositionDto> getCompositionByBook(String book);

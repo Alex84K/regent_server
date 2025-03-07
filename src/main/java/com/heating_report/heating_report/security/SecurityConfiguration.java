@@ -1,11 +1,8 @@
 package com.heating_report.heating_report.security;
-
-
 import com.heating_report.heating_report.security.filters.JwtTokenFilter;
 import com.heating_report.heating_report.security.utils.CustomSecurity;
 import com.heating_report.heating_report.security.utils.UserDetailsServiceImpl;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -20,17 +17,12 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.List;
 @Configuration
 @RequiredArgsConstructor
 @EnableWebSecurity
 public class SecurityConfiguration {
 
-    @Autowired
     private final UserDetailsServiceImpl userDetailsService;
     private final JwtTokenFilter jwtTokenFilter;
     private final CustomSecurity customSecurity;

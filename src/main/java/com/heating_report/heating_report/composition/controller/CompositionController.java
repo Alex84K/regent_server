@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 
+//@CrossOrigin(origins = "http://localhost:5173")
 @CrossOrigin
 @RestController
 @RequestMapping("/api/v1/compositions")
@@ -34,6 +35,11 @@ public class CompositionController {
     @PutMapping("")
     public CompositionDto updateComposition(@RequestBody UpdateCompositionDto dto) {
         return compositionService.updateComposition(dto);
+    }
+
+    @GetMapping("")
+    public Iterable<CompositionDto> getAllCompositions(){
+        return compositionService.getAllCompositions();
     }
 
     @GetMapping("/names/{name}")

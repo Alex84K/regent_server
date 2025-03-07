@@ -55,21 +55,29 @@ public class UserAccountServiceImpl implements UserAccountService, CommandLineRu
     @Transactional
     @Override
     public UserDto registerUser(UserRegistrationDto data) {
+
+        //check if user with such email or username already exists
         if (userRepository.existsByUsernameIgnoreCase(data.getUsername())) {
             throw new UsernameAlreadyRegisteredException();
         } else if (userRepository.existsByEmail(data.getEmail())) {
             throw new EmailAlreadyRegisteredException();
         }
+
         UserAccount userAccount = modelMapper.map(data, UserAccount.class);
-        String passwd = passwordEncoder.encode(userAccount.getPassword());
-        userAccount.setPassword(passwd);
-        userRepository.save(userAccount);
+        userAccount.setRoles("USER");
+        String pass = passwordEncoder.encode(userAccount.getPassword());
+        userAccount.setPassword(pass);
+        UserAccount savedUser = userRepository.save(userAccount);
+        // sending email activation key, it will be saved to Database
+        //emailService.sendActivationEmail(savedUser.getId());
         return modelMapper.map(userAccount, UserDto.class);
     }
 
     @Override
     public UserDto loginUser(UserLoginDto data) {
+
         Optional<UserAccount> userAccount = userRepository.findByUsernameEquals(data.getUsername());
+
         if (userAccount.isPresent()) {
             try {
                 UserAccount user = userAccount.get();
@@ -149,9 +157,6 @@ public class UserAccountServiceImpl implements UserAccountService, CommandLineRu
         }
         if (data.getImage() != null && !data.getImage().equals(userAccount.getImage())) {
             userAccount.setImage(data.getImage());
-        }
-        if (data.getTelefon() != null && !data.getTelefon().equals(userAccount.getTelefon())) {
-            userAccount.setTelefon(data.getTelefon());
         }
         if (data.getStatus() != null && !data.getStatus().equals(userAccount.getStatus())) {
             userAccount.setStatus(data.getStatus());

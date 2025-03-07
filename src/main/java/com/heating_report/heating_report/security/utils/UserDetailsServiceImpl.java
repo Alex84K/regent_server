@@ -1,5 +1,4 @@
 package com.heating_report.heating_report.security.utils;
-
 import com.heating_report.heating_report.accouting.dao.UserRepository;
 import com.heating_report.heating_report.accouting.dto.exceptions.UserNotFoundException;
 import lombok.RequiredArgsConstructor;

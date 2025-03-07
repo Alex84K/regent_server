@@ -6,6 +6,7 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import java.util.Optional;
 
 public interface CompositionRepository extends MongoRepository<Composition, String> {
+    Optional<Composition> findByBookAndNumber(String book, String number);
     /*Optional<Composition> findByNameEquals(String name);
     Optional<Composition> findUserById(String id);
     Optional<Composition> deleteUserByUserId(String id);*/
