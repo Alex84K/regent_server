@@ -1,8 +1,10 @@
 version: "3"
 services:
-  app:
+  regent_server:
     image: regent_server:latest
     container_name: regent_server
+    restart: always
     ports:
       - "8080:8080"
-    restart: always
+    env_file:
+      - .env
