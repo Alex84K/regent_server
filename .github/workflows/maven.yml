@@ -86,7 +86,7 @@ jobs:
         run: |
           sshpass -p "${{ secrets.SUDO_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
             mkdir -p $DEPLOY_DIR
-            chmod 777 $DEPLOY_DIR
+            chmod -R 777 $DEPLOY_DIR
           EOF
 
       # Шаг 3: Проверка существования всех нужных файлов на сервере
