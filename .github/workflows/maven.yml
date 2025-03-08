@@ -82,33 +82,29 @@ jobs:
           sudo apt-get install -y sshpass
 
       # Шаг 2: Создание директории для деплоя на сервере (если её нет)
-      # Шаг 2: Создание директории для деплоя на сервере (если её нет)
       - name: Create deploy directory on remote server
         run: |
           sshpass -p "${{ secrets.SUDO_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
-            # Экспорт переменных окружения
-            export DEPLOY_DIR="${DEPLOY_DIR}"
-
             # Создание директории, если она не существует
-            mkdir -p "$DEPLOY_DIR"
+            mkdir -p /root/deploy_regent_server/
 
             # Установка прав доступа для директории
-            chmod -R 777 "$DEPLOY_DIR"
+            chmod -R 777 /root/deploy_regent_server/
           EOF
 
       # Шаг 3: Проверка существования всех нужных файлов на сервере
       - name: Check for required files
         run: |
           sshpass -p "${{ secrets.SUDO_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
-            if [ ! -f '$DEPLOY_DIR/$DOCKER_IMAGE.tar' ]; then
+            if [ ! -f '/root/deploy_regent_server/$DOCKER_IMAGE.tar' ]; then
               echo 'Error: Docker image not found on server!'
               exit 1
             fi
-            if [ ! -f '$DEPLOY_DIR/docker-compose.yml' ]; then
+            if [ ! -f '/root/deploy_regent_server/docker-compose.yml' ]; then
               echo 'Error: docker-compose.yml not found on server!'
               exit 1
             fi
-            if [ ! -f '$DEPLOY_DIR/.env' ]; then
+            if [ ! -f '/root/deploy_regent_server/.env' ]; then
               echo 'Error: .env file not found on server!'
               exit 1
             fi
@@ -118,7 +114,7 @@ jobs:
       - name: Deploy Docker image on remote server
         run: |
           sshpass -p "${{ secrets.SUDO_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
-            cd $DEPLOY_DIR
+            cd /root/deploy_regent_server/
           
             # Остановка и удаление старого контейнера
             docker stop $CONTAINER_NAME || true
@@ -128,6 +124,6 @@ jobs:
             docker rmi $DOCKER_IMAGE || true
 
             # Развёртывание нового контейнера
-            docker load -i $DOCKER_IMAGE.tar
+            docker load -i /root/deploy_regent_server/$DOCKER_IMAGE.tar
             docker-compose up -d --force-recreate
           EOF
