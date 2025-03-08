@@ -65,11 +65,11 @@ jobs:
         run: |
           sshpass -p "${{ secrets.SUDO_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << EOF
             cd $DEPLOY_DIR
-
-            # Сборка Docker-образа на удалённом сервере
             docker build -t $DOCKER_IMAGE .
-            docker images
+            docker save -o $DOCKER_IMAGE.tar $DOCKER_IMAGE
+            ls -la
           EOF
+  
 
   deploy-to-server:
     runs-on: ubuntu-latest
