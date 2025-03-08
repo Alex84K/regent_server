@@ -2,9 +2,11 @@ name: Java CI with Maven, Docker Build and Deploy
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - "main"
   pull_request:
-    branches: [ "main" ]
+    branches:
+      - "main"
 
 env:
   DOCKER_IMAGE: "regent_server"
@@ -19,9 +21,10 @@ jobs:
 
     steps:
       # Шаг 1: Проверка исходного кода
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      # Шаг 2: Список файлов в рабочей директории
+      # Шаг 2: Список файлов в рабочей директории (для диагностики)
       - name: List files in the working directory
         run: ls -la
 
@@ -46,7 +49,7 @@ jobs:
       # Шаг 6: Копирование исходных файлов на удалённый сервер
       - name: Copy source code and docker-compose.yml to remote server
         run: |
-          # Копирование исходного кода (собранного с Maven) и docker-compose.yml на сервер
+          # Копирование собранного артефакта и docker-compose.yml на сервер
           sshpass -p "${{ secrets.SUDO_PASSWORD }}" scp -o StrictHostKeyChecking=no \
             -r ./target ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:$DEPLOY_DIR
           
