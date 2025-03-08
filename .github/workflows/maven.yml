@@ -59,12 +59,20 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y sshpass
 
-      # Шаг 9: Копирование файлов на удалённый сервер (без .env)
+      # Шаг 9: Копирование файлов на удалённый сервер
       - name: Copy files to remote server
         run: |
+          # Копирование Docker-образа и docker-compose.yml на сервер
           sshpass -p "${{ secrets.SUDO_PASSWORD }}" scp -o StrictHostKeyChecking=no \
-            $DOCKER_IMAGE.tar docker-compose.yml \
-            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:$DEPLOY_DIR
+            $DOCKER_IMAGE.tar ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:$DEPLOY_DIR
+          
+          # Копирование docker-compose.yml на сервер
+          sshpass -p "${{ secrets.SUDO_PASSWORD }}" scp -o StrictHostKeyChecking=no \
+            docker-compose.yml ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:$DEPLOY_DIR
+          
+          # Копирование .env файла на сервер
+          sshpass -p "${{ secrets.SUDO_PASSWORD }}" scp -o StrictHostKeyChecking=no \
+            .env ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:$DEPLOY_DIR
 
   deploy-to-server:
     runs-on: ubuntu-latest
