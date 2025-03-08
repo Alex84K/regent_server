@@ -73,9 +73,9 @@ jobs:
           # Шаг для создания нового docker-compose.yml с подставленными переменными окружения
           sshpass -p "${{ secrets.SUDO_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << EOF
             # Замена переменных в docker-compose.yml
-            sed -i "s|\${SPRING_DATASOURCE_URL}|${{ secrets.SPRING_DATASOURCE_URL }}|g" $DEPLOY_DIR/docker-compose.yml
-            sed -i "s|\${SPRING_DATASOURCE_USERNAME}|${{ secrets.SPRING_DATASOURCE_USERNAME }}|g" $DEPLOY_DIR/docker-compose.yml
-            sed -i "s|\${SPRING_DATASOURCE_PASSWORD}|${{ secrets.SPRING_DATASOURCE_PASSWORD }}|g" $DEPLOY_DIR/docker-compose.yml
+            export SPRING_DATASOURCE_URL="${{ secrets.SPRING_DATASOURCE_URL }}"
+            export SPRING_DATASOURCE_USERNAME="${{ secrets.SPRING_DATASOURCE_USERNAME }}"
+            export SPRING_DATASOURCE_PASSWORD="${{ secrets.SPRING_DATASOURCE_PASSWORD }}"
           EOF
 
   deploy-to-server:
