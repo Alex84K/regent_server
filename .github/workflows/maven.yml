@@ -2,11 +2,9 @@ name: Java CI with Maven, Docker Build and Deploy
 
 on:
   push:
-    branches:
-      - "main"
+    branches: [ "main" ]
   pull_request:
-    branches:
-      - "main"
+    branches: [ "main" ]
 
 env:
   DOCKER_IMAGE: "regent_server"
@@ -21,10 +19,9 @@ jobs:
 
     steps:
       # Шаг 1: Проверка исходного кода
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      # Шаг 2: Список файлов в рабочей директории (для диагностики)
+      # Шаг 2: Список файлов в рабочей директории
       - name: List files in the working directory
         run: ls -la
 
@@ -40,28 +37,35 @@ jobs:
       - name: Build with Maven
         run: mvn clean package -DskipTests
 
-      # Шаг 5: Сборка Docker-образа
+      # Шаг 5: Настройка Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Шаг 6: Сборка Docker-образа
       - name: Build Docker image
         run: |
-          docker build -t $DOCKER_IMAGE:${GITHUB_SHA} .
-
-      # Шаг 6: Сохранение Docker-образа в файл
-      - name: Save Docker image as tarball
+          docker build -t $DOCKER_IMAGE .
+          docker images
+      # Шаг 7: Сохранение Docker-образа в файл
+      - name: Save Docker image
         run: |
-          docker save $DOCKER_IMAGE:${GITHUB_SHA} -o $DOCKER_IMAGE.tar
-
-      # Шаг 7: Установка sshpass
+          docker save $DOCKER_IMAGE -o $DOCKER_IMAGE.tar
+          ls -lh
+      # Шаг 8: Установка sshpass
       - name: Install sshpass
         run: |
           sudo apt-get update
           sudo apt-get install -y sshpass
-
-      # Шаг 8: Копирование Docker-образа на удалённый сервер
-      - name: Copy Docker image to remote server
+      # Шаг 9: Копирование файлов на удалённый сервер
+      - name: Copy files to remote server
         run: |
+          # Копирование Docker-образа и docker-compose.yml на сервер
           sshpass -p "${{ secrets.SUDO_PASSWORD }}" scp -o StrictHostKeyChecking=no \
             $DOCKER_IMAGE.tar ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:$DEPLOY_DIR
-
+          
+          # Копирование docker-compose.yml на сервер
+          sshpass -p "${{ secrets.SUDO_PASSWORD }}" scp -o StrictHostKeyChecking=no \
+            docker-compose.yml ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:$DEPLOY_DIR
   deploy-to-server:
     runs-on: ubuntu-latest
     needs: build
@@ -72,31 +76,16 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y sshpass
-
       # Шаг 2: Создание директории для деплоя на сервере (если её нет)
       - name: Create deploy directory on remote server
         run: |
           sshpass -p "${{ secrets.SUDO_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << EOF
             # Создание директории, если она не существует
             mkdir -p /root/deploy_regent_server/
-
             # Установка прав доступа для директории
             chmod -R 777 /root/deploy_regent_server/
           EOF
-
       # Шаг 3: Проверка существования всех нужных файлов на сервере
-      - name: Check for required files
-        run: |
-          sshpass -p "${{ secrets.SUDO_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << EOF
-            if [ ! -f "/root/deploy_regent_server/$DOCKER_IMAGE.tar" ]; then
-              echo "Error: Docker image not found on server!"
-              exit 1
-            fi
-            if [ ! -f "/root/deploy_regent_server/docker-compose.yml" ]; then
-              echo "Error: docker-compose.yml not found on server!"
-              exit 1
-            fi
-          EOF
 
       # Шаг 4: Развёртывание Docker-образа на сервере
       - name: Deploy Docker image on remote server
@@ -104,13 +93,12 @@ jobs:
           sshpass -p "${{ secrets.SUDO_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << EOF
             cd /root/deploy_regent_server/
           
-            # Загрузка Docker-образа на сервер
-            docker load -i $DOCKER_IMAGE.tar
-
             # Остановка и удаление старого контейнера
             docker stop $CONTAINER_NAME || true
             docker rm $CONTAINER_NAME || true
-
+            # Удаление старого образа
+            docker rmi $DOCKER_IMAGE || true
             # Развёртывание нового контейнера
+            docker load -i /root/deploy_regent_server/$DOCKER_IMAGE.tar
             docker-compose up -d --force-recreate
           EOF
