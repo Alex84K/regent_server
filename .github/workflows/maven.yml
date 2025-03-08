@@ -53,8 +53,9 @@ jobs:
 
       - name: Copy files to remote server
         run: |
-          sshpass -p "${{ secrets.SUDO_PASSWORD }}" scp -o StrictHostKeyChecking=no $DOCKER_IMAGE.tar ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:$DEPLOY_DIR
-          sshpass -p "${{ secrets.SUDO_PASSWORD }}" scp -o StrictHostKeyChecking=no docker-compose.yml ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:$DEPLOY_DIR
+          sshpass -p "${{ secrets.SUDO_PASSWORD }}" scp -o StrictHostKeyChecking=no \
+            $DOCKER_IMAGE.tar docker-compose.yml .env \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:$DEPLOY_DIR
 
   deploy-to-server:
     runs-on: ubuntu-latest
@@ -68,14 +69,14 @@ jobs:
 
       - name: Create deploy directory on remote server
         run: |
-          sshpass -p "${{ secrets.SUDO_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "
-            mkdir -p $DEPLOY_DIR &&
+          sshpass -p "${{ secrets.SUDO_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
+            mkdir -p $DEPLOY_DIR
             chmod 777 $DEPLOY_DIR
-          "
+          EOF
 
       - name: Check for required files
         run: |
-          sshpass -p "${{ secrets.SUDO_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "
+          sshpass -p "${{ secrets.SUDO_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
             if [ ! -f '$DEPLOY_DIR/$DOCKER_IMAGE.tar' ]; then
               echo 'Error: Docker image not found on server!'
               exit 1
@@ -84,12 +85,25 @@ jobs:
               echo 'Error: docker-compose.yml not found on server!'
               exit 1
             fi
-          "
+            if [ ! -f '$DEPLOY_DIR/.env' ]; then
+              echo 'Error: .env file not found on server!'
+              exit 1
+            fi
+          EOF
 
       - name: Deploy Docker image on remote server
         run: |
-          sshpass -p "${{ secrets.SUDO_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "
-            cd $DEPLOY_DIR &&
-            docker load -i $DOCKER_IMAGE.tar &&
-            docker-compose down && docker-compose up -d
-          "
+          sshpass -p "${{ secrets.SUDO_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
+            cd $DEPLOY_DIR
+          
+            # Остановка и удаление старого контейнера
+            docker stop $CONTAINER_NAME || true
+            docker rm $CONTAINER_NAME || true
+
+            # Удаление старого образа
+            docker rmi $DOCKER_IMAGE || true
+
+            # Развёртывание нового контейнера
+            docker load -i $DOCKER_IMAGE.tar
+            docker-compose up -d --force-recreate
+          EOF
