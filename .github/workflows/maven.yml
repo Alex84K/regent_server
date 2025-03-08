@@ -7,7 +7,7 @@ on:
     branches: [ "main" ]
 
 env:
-  DOCKER_IMAGE: "java-app"
+  DOCKER_IMAGE: "regent_server"
   DEPLOY_DIR: "/root/deploy_regent_server/"
   CONTAINER_NAME: "regent_server"
   HOST_PORT: "8080"
