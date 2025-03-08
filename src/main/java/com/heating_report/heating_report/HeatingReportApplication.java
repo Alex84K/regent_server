@@ -24,6 +24,7 @@ public class HeatingReportApplication {
 		// Если файл не найден, пытаемся загрузить из корня проекта
 		if (dotenv == null || dotenv.entries().isEmpty()) {
 			dotenv = Dotenv.configure().load();
+			System.out.println("1234");
 		}
 
 		// Загружаем переменные окружения из найденного .env

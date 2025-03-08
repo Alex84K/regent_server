@@ -37,38 +37,33 @@ jobs:
       - name: Build with Maven
         run: mvn clean package -DskipTests
 
-      # Шаг 5: Настройка Docker Buildx
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      # Шаг 6: Сборка Docker-образа
-      - name: Build Docker image
-        run: |
-          docker build -t $DOCKER_IMAGE .
-          docker images
-
-      # Шаг 7: Сохранение Docker-образа в файл
-      - name: Save Docker image
-        run: |
-          docker save $DOCKER_IMAGE -o $DOCKER_IMAGE.tar
-          ls -lh
-
-      # Шаг 8: Установка sshpass
+      # Шаг 5: Установка sshpass
       - name: Install sshpass
         run: |
           sudo apt-get update
           sudo apt-get install -y sshpass
 
-      # Шаг 9: Копирование файлов на удалённый сервер
-      - name: Copy files to remote server
+      # Шаг 6: Копирование исходных файлов на удалённый сервер
+      - name: Copy source code and docker-compose.yml to remote server
         run: |
-          # Копирование Docker-образа и docker-compose.yml на сервер
+          # Копирование исходного кода (собранного с Maven) и docker-compose.yml на сервер
           sshpass -p "${{ secrets.SUDO_PASSWORD }}" scp -o StrictHostKeyChecking=no \
-            $DOCKER_IMAGE.tar ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:$DEPLOY_DIR
+            -r ./target ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:$DEPLOY_DIR
           
           # Копирование docker-compose.yml на сервер
           sshpass -p "${{ secrets.SUDO_PASSWORD }}" scp -o StrictHostKeyChecking=no \
             docker-compose.yml ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:$DEPLOY_DIR
+
+      # Шаг 7: Сохранение Docker-образа на сервере (будет собираться на сервере)
+      - name: Build Docker image on remote server
+        run: |
+          sshpass -p "${{ secrets.SUDO_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << EOF
+            cd $DEPLOY_DIR
+
+            # Сборка Docker-образа на удалённом сервере
+            docker build -t $DOCKER_IMAGE .
+            docker images
+          EOF
 
   deploy-to-server:
     runs-on: ubuntu-latest
@@ -124,6 +119,5 @@ jobs:
             docker rmi $DOCKER_IMAGE || true
 
             # Развёртывание нового контейнера
-            docker load -i /root/deploy_regent_server/$DOCKER_IMAGE.tar
             docker-compose up -d --force-recreate
           EOF
