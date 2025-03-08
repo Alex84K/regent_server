@@ -19,8 +19,9 @@ COPY --from=build /usr/src/app/target/*.jar /usr/app/report.jar
 # Пример использования переменных окружения (установим переменные для конфигурации)
 # Устанавливаем переменные окружения, которые могут быть использованы в вашем приложении
 ENV SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}
-ENV SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}
-ENV SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
+ENV SPRING_DATASOURCE_MAIL_USERNAME=${SPRING_DATASOURCE_MAIL_USERNAME}
+ENV SPRING_DATASOURCE_MAIL_PWD=${SPRING_DATASOURCE_MAIL_PWD}
+ENV SPRING_DATASOURCE_MAIL_HOST=${SPRING_DATASOURCE_MAIL_HOST}
 
 # Запускаем приложение
 CMD ["java", "-jar", "/usr/app/report.jar"]
