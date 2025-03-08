@@ -46,26 +46,38 @@ jobs:
         run: |
           docker build -t $DOCKER_IMAGE .
           docker images
+
       # Шаг 7: Сохранение Docker-образа в файл
       - name: Save Docker image
         run: |
           docker save $DOCKER_IMAGE -o $DOCKER_IMAGE.tar
           ls -lh
+
       # Шаг 8: Установка sshpass
       - name: Install sshpass
         run: |
           sudo apt-get update
           sudo apt-get install -y sshpass
-      # Шаг 9: Копирование файлов на удалённый сервер
-      - name: Copy files to remote server
+
+      # Шаг 9: Копирование Docker-образа и docker-compose.yml на сервер
+      - name: Copy Docker image and docker-compose.yml to remote server
         run: |
-          # Копирование Docker-образа и docker-compose.yml на сервер
+          # Копирование Docker-образа на сервер
           sshpass -p "${{ secrets.SUDO_PASSWORD }}" scp -o StrictHostKeyChecking=no \
             $DOCKER_IMAGE.tar ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:$DEPLOY_DIR
           
           # Копирование docker-compose.yml на сервер
           sshpass -p "${{ secrets.SUDO_PASSWORD }}" scp -o StrictHostKeyChecking=no \
             docker-compose.yml ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:$DEPLOY_DIR
+
+          # Шаг для создания нового docker-compose.yml с подставленными переменными окружения
+          sshpass -p "${{ secrets.SUDO_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << EOF
+            # Замена переменных в docker-compose.yml
+            sed -i "s|\${SPRING_DATASOURCE_URL}|${{ secrets.SPRING_DATASOURCE_URL }}|g" $DEPLOY_DIR/docker-compose.yml
+            sed -i "s|\${SPRING_DATASOURCE_USERNAME}|${{ secrets.SPRING_DATASOURCE_USERNAME }}|g" $DEPLOY_DIR/docker-compose.yml
+            sed -i "s|\${SPRING_DATASOURCE_PASSWORD}|${{ secrets.SPRING_DATASOURCE_PASSWORD }}|g" $DEPLOY_DIR/docker-compose.yml
+          EOF
+
   deploy-to-server:
     runs-on: ubuntu-latest
     needs: build
@@ -76,6 +88,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y sshpass
+
       # Шаг 2: Создание директории для деплоя на сервере (если её нет)
       - name: Create deploy directory on remote server
         run: |
@@ -85,9 +98,8 @@ jobs:
             # Установка прав доступа для директории
             chmod -R 777 /root/deploy_regent_server/
           EOF
-      # Шаг 3: Проверка существования всех нужных файлов на сервере
 
-      # Шаг 4: Развёртывание Docker-образа на сервере
+      # Шаг 3: Развёртывание Docker-образа на сервере
       - name: Deploy Docker image on remote server
         run: |
           sshpass -p "${{ secrets.SUDO_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << EOF
