@@ -1,13 +1,13 @@
-version: "3"
+version: '3.8'
+
 services:
   regent_server:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    build: .
     container_name: regent_server
     restart: always
+    environment:
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
     ports:
       - "8080:8080"
-    env_file:
-      #- /root/deploy_regent_server/.env
-      - .env

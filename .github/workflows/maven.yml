@@ -40,36 +40,27 @@ jobs:
       - name: Build with Maven
         run: mvn clean package -DskipTests
 
-      # Шаг 5: Установка sshpass
+      # Шаг 5: Сборка Docker-образа
+      - name: Build Docker image
+        run: |
+          docker build -t $DOCKER_IMAGE:${GITHUB_SHA} .
+
+      # Шаг 6: Сохранение Docker-образа в файл
+      - name: Save Docker image as tarball
+        run: |
+          docker save $DOCKER_IMAGE:${GITHUB_SHA} -o $DOCKER_IMAGE.tar
+
+      # Шаг 7: Установка sshpass
       - name: Install sshpass
         run: |
           sudo apt-get update
           sudo apt-get install -y sshpass
 
-      # Шаг 6: Копирование исходных файлов, Dockerfile и docker-compose.yml на удалённый сервер
-      - name: Copy source code, Dockerfile and docker-compose.yml to remote server
+      # Шаг 8: Копирование Docker-образа на удалённый сервер
+      - name: Copy Docker image to remote server
         run: |
-          # Копирование собранного артефакта и docker-compose.yml на сервер
           sshpass -p "${{ secrets.SUDO_PASSWORD }}" scp -o StrictHostKeyChecking=no \
-            -r ./target ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:$DEPLOY_DIR
-          
-          # Копирование Dockerfile и docker-compose.yml на сервер
-          sshpass -p "${{ secrets.SUDO_PASSWORD }}" scp -o StrictHostKeyChecking=no \
-            Dockerfile ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:$DEPLOY_DIR
-          
-          sshpass -p "${{ secrets.SUDO_PASSWORD }}" scp -o StrictHostKeyChecking=no \
-            docker-compose.yml ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:$DEPLOY_DIR
-
-      # Шаг 7: Сборка Docker-образа на удалённом сервере
-      - name: Build Docker image on remote server
-        run: |
-          sshpass -p "${{ secrets.SUDO_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << EOF
-            cd $DEPLOY_DIR
-            docker build -t $DOCKER_IMAGE .
-            docker save -o $DOCKER_IMAGE.tar $DOCKER_IMAGE
-            ls -la
-          EOF
-  
+            $DOCKER_IMAGE.tar ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:$DEPLOY_DIR
 
   deploy-to-server:
     runs-on: ubuntu-latest
@@ -93,18 +84,32 @@ jobs:
             chmod -R 777 /root/deploy_regent_server/
           EOF
 
+      # Шаг 3: Проверка существования всех нужных файлов на сервере
+      - name: Check for required files
+        run: |
+          sshpass -p "${{ secrets.SUDO_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << EOF
+            if [ ! -f "/root/deploy_regent_server/$DOCKER_IMAGE.tar" ]; then
+              echo "Error: Docker image not found on server!"
+              exit 1
+            fi
+            if [ ! -f "/root/deploy_regent_server/docker-compose.yml" ]; then
+              echo "Error: docker-compose.yml not found on server!"
+              exit 1
+            fi
+          EOF
+
       # Шаг 4: Развёртывание Docker-образа на сервере
       - name: Deploy Docker image on remote server
         run: |
           sshpass -p "${{ secrets.SUDO_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << EOF
             cd /root/deploy_regent_server/
           
+            # Загрузка Docker-образа на сервер
+            docker load -i $DOCKER_IMAGE.tar
+
             # Остановка и удаление старого контейнера
             docker stop $CONTAINER_NAME || true
             docker rm $CONTAINER_NAME || true
-
-            # Удаление старого образа
-            docker rmi $DOCKER_IMAGE || true
 
             # Развёртывание нового контейнера
             docker-compose up -d --force-recreate

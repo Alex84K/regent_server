@@ -8,34 +8,6 @@ import java.nio.file.Paths;
 
 @SpringBootApplication
 public class HeatingReportApplication {
-	// Статический блок для загрузки переменных из .env
-	static {
-		// Задаем пути к .env в разных местах
-		String deployEnvPath = "/root/deploy_regent_server/.env"; // Путь, если .env в deploy_regent_server
-		String projectEnvPath = ".env"; // Путь, если .env в корне проекта
-
-		// Переменная для загрузки .env из одного из двух путей
-		Dotenv dotenv = null;
-
-		// Сначала пытаемся загрузить из deploy_regent_server
-		if (Files.exists(Paths.get(deployEnvPath))) {
-			dotenv = Dotenv.configure().directory("/root/deploy_regent_server").load();
-		}
-		// Если файл не найден, пытаемся загрузить из корня проекта
-		if (dotenv == null || dotenv.entries().isEmpty()) {
-			dotenv = Dotenv.configure().load();
-			System.out.println("1234");
-		}
-
-		// Загружаем переменные окружения из найденного .env
-		if (dotenv != null) {
-			dotenv.entries().forEach(entry -> {
-				System.setProperty(entry.getKey(), entry.getValue());
-			});
-		} else {
-			throw new RuntimeException(".env file not found in both paths");
-		}
-	}
 
 	public static void main(String[] args) {
 		SpringApplication.run(HeatingReportApplication.class, args);
