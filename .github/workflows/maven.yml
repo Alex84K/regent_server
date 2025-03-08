@@ -84,7 +84,7 @@ jobs:
       # Шаг 2: Создание директории для деплоя на сервере (если её нет)
       - name: Create deploy directory on remote server
         run: |
-          sshpass -p "${{ secrets.SUDO_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
+          sshpass -p "${{ secrets.SUDO_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << EOF
             # Создание директории, если она не существует
             mkdir -p /root/deploy_regent_server/
 
@@ -95,17 +95,17 @@ jobs:
       # Шаг 3: Проверка существования всех нужных файлов на сервере
       - name: Check for required files
         run: |
-          sshpass -p "${{ secrets.SUDO_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
-            if [ ! -f '/root/deploy_regent_server/$DOCKER_IMAGE.tar' ]; then
-              echo 'Error: Docker image not found on server!'
+          sshpass -p "${{ secrets.SUDO_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << EOF
+            if [ ! -f "/root/deploy_regent_server/$DOCKER_IMAGE.tar" ]; then
+              echo "Error: Docker image not found on server!"
               exit 1
             fi
-            if [ ! -f '/root/deploy_regent_server/docker-compose.yml' ]; then
-              echo 'Error: docker-compose.yml not found on server!'
+            if [ ! -f "/root/deploy_regent_server/docker-compose.yml" ]; then
+              echo "Error: docker-compose.yml not found on server!"
               exit 1
             fi
-            if [ ! -f '/root/deploy_regent_server/.env' ]; then
-              echo 'Error: .env file not found on server!'
+            if [ ! -f "/root/deploy_regent_server/.env" ]; then
+              echo "Error: .env file not found on server!"
               exit 1
             fi
           EOF
@@ -113,7 +113,7 @@ jobs:
       # Шаг 4: Развёртывание Docker-образа на сервере
       - name: Deploy Docker image on remote server
         run: |
-          sshpass -p "${{ secrets.SUDO_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
+          sshpass -p "${{ secrets.SUDO_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << EOF
             cd /root/deploy_regent_server/
           
             # Остановка и удаление старого контейнера
