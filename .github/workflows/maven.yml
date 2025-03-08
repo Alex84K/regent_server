@@ -82,11 +82,18 @@ jobs:
           sudo apt-get install -y sshpass
 
       # Шаг 2: Создание директории для деплоя на сервере (если её нет)
+      # Шаг 2: Создание директории для деплоя на сервере (если её нет)
       - name: Create deploy directory on remote server
         run: |
           sshpass -p "${{ secrets.SUDO_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
-            mkdir -p $DEPLOY_DIR
-            chmod -R 777 $DEPLOY_DIR
+            # Экспорт переменных окружения
+            export DEPLOY_DIR="${DEPLOY_DIR}"
+
+            # Создание директории, если она не существует
+            mkdir -p "$DEPLOY_DIR"
+
+            # Установка прав доступа для директории
+            chmod -R 777 "$DEPLOY_DIR"
           EOF
 
       # Шаг 3: Проверка существования всех нужных файлов на сервере
