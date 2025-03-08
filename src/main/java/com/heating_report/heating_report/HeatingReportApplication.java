@@ -10,7 +10,7 @@ import java.nio.file.Paths;
 public class HeatingReportApplication {
 	// Статический блок для загрузки переменных из .env
 	static {
-		// Задаем путь к .env в папке deploy_regent_server
+		// Задаем пути к .env в разных местах
 		String deployEnvPath = "/root/deploy_regent_server/.env"; // Путь, если .env в deploy_regent_server
 		String projectEnvPath = ".env"; // Путь, если .env в корне проекта
 
