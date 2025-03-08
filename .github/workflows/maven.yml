@@ -54,7 +54,7 @@ jobs:
           sshpass -p "${{ secrets.SUDO_PASSWORD }}" scp -o StrictHostKeyChecking=no \
             docker-compose.yml ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:$DEPLOY_DIR
 
-      # Шаг 7: Сохранение Docker-образа на сервере (будет собираться на сервере)
+      # Шаг 7: Сборка Docker-образа на удалённом сервере
       - name: Build Docker image on remote server
         run: |
           sshpass -p "${{ secrets.SUDO_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << EOF
