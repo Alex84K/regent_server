@@ -1,10 +1,10 @@
 version: "3"
 services:
   regent_server:
-    image: regent_server:latest
+    build: .
     container_name: regent_server
     restart: always
     ports:
       - "8080:8080"
     env_file:
-      - /root/deploy_regent_server/.env
+      - .env
