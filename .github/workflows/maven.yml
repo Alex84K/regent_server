@@ -46,14 +46,17 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y sshpass
 
-      # Шаг 6: Копирование исходных файлов на удалённый сервер
-      - name: Copy source code and docker-compose.yml to remote server
+      # Шаг 6: Копирование исходных файлов, Dockerfile и docker-compose.yml на удалённый сервер
+      - name: Copy source code, Dockerfile and docker-compose.yml to remote server
         run: |
           # Копирование собранного артефакта и docker-compose.yml на сервер
           sshpass -p "${{ secrets.SUDO_PASSWORD }}" scp -o StrictHostKeyChecking=no \
             -r ./target ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:$DEPLOY_DIR
           
-          # Копирование docker-compose.yml на сервер
+          # Копирование Dockerfile и docker-compose.yml на сервер
+          sshpass -p "${{ secrets.SUDO_PASSWORD }}" scp -o StrictHostKeyChecking=no \
+            Dockerfile ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:$DEPLOY_DIR
+          
           sshpass -p "${{ secrets.SUDO_PASSWORD }}" scp -o StrictHostKeyChecking=no \
             docker-compose.yml ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:$DEPLOY_DIR
 
