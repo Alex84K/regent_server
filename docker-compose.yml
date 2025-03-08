@@ -9,4 +9,5 @@ services:
     ports:
       - "8080:8080"
     env_file:
-      - /root/deploy_regent_server/.env
+      #- /root/deploy_regent_server/.env
+      - .env
