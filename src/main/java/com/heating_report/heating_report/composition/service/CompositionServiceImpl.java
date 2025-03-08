@@ -14,8 +14,16 @@ import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.Optional;
 
@@ -23,7 +31,7 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 @Order(10)
-public class CompositionServiceImpl implements CompositionService{
+public class CompositionServiceImpl implements CompositionService {
 
     @Autowired
     private final CompositionRepository compositionRepository;
@@ -62,21 +70,21 @@ public class CompositionServiceImpl implements CompositionService{
     public CompositionDto updateComposition(UpdateCompositionDto dto) {
         try {
             Composition composition = compositionRepository.findById(dto.getId()).orElseThrow(CompositionNotFoundExceptions::new);
-            if(dto.getName() != null) {
+            if (dto.getName() != null) {
                 composition.setName(dto.getName());
             }
-            if(dto.getBook() != null) {
+            if (dto.getBook() != null) {
                 composition.setBook(dto.getBook());
             }
-            if(dto.getNumber() != null) {
+            if (dto.getNumber() != null) {
                 composition.setNumber(dto.getNumber());
             }
-            if(dto.getTheme() != null) {
+            if (dto.getTheme() != null) {
                 composition.setTheme(dto.getTheme());
             }
             compositionRepository.save(composition);
             return modelMapper.map(composition, CompositionDto.class);
-        }  catch (CompositionNotFoundExceptions e) {
+        } catch (CompositionNotFoundExceptions e) {
             // Если композиция не найдена, выбрасываем исключение с HTTP 404
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Composition not found", e);
         } catch (Exception e) {
@@ -146,7 +154,7 @@ public class CompositionServiceImpl implements CompositionService{
             composition.setLastDirigent(dto.getLastDirigent());
             compositionRepository.save(composition);
             return modelMapper.map(composition, CompositionDto.class);
-        }  catch (CompositionNotFoundExceptions e) {
+        } catch (CompositionNotFoundExceptions e) {
             // Если композиция не найдена, выбрасываем исключение с HTTP 404
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Composition not found", e);
         } catch (Exception e) {
@@ -163,7 +171,7 @@ public class CompositionServiceImpl implements CompositionService{
             composition.setLastData(LocalDate.now());
             compositionRepository.save(composition);
             return modelMapper.map(composition, CompositionDto.class);
-        }  catch (CompositionNotFoundExceptions e) {
+        } catch (CompositionNotFoundExceptions e) {
             // Если композиция не найдена, выбрасываем исключение с HTTP 404
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Composition not found", e);
         } catch (Exception e) {
@@ -171,4 +179,41 @@ public class CompositionServiceImpl implements CompositionService{
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid request data", e);
         }
     }
+
+    @Override
+    public Boolean addCompositionsFromCsv(MultipartFile file) {
+        try (Reader reader = new InputStreamReader(file.getInputStream())) {
+            CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withDelimiter(',').withFirstRecordAsHeader());
+
+            for (CSVRecord csvRecord : csvParser) {
+                // Extract fields from CSV
+                String name = csvRecord.get(0);  // First column is name
+                String book = csvRecord.get(1);   // Third column is book
+                String number = csvRecord.get(2); // Second column is number
+
+                String theme = csvRecord.get(3);  // Fourth column is theme
+
+                // Create NewCompositionDto object
+                NewCompositionDto dto = new NewCompositionDto(name, book, number, theme);
+
+                // Check if composition already exists
+                Optional<Composition> existingComposition = compositionRepository.findByBookAndNumber(dto.getBook(), dto.getNumber());
+                if (existingComposition.isPresent()) {
+                    continue; // Skip if the composition already exists
+                }
+
+                // Map to Composition entity
+                Composition composition = modelMapper.map(dto, Composition.class);
+                composition.setLastData(LocalDate.now()); // Set current date
+                composition.setInWork(false); // By default, it's not in work
+
+                // Save to repository
+                compositionRepository.save(composition);
+            }
+            return true;
+        } catch (IOException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error processing CSV file", e);
+        }
+    }
+
 }

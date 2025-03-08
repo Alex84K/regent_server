@@ -4,7 +4,9 @@ import com.heating_report.heating_report.composition.dto.*;
 import com.heating_report.heating_report.composition.service.CompositionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 
@@ -75,5 +77,11 @@ public class CompositionController {
     @DeleteMapping("/works/{id}")
     public CompositionDto removeCompositionInWork(@PathVariable String id){
         return compositionService.removeCompositionInWork(id);
+    }
+
+    @PostMapping("/upload-csv")
+    public ResponseEntity<String> uploadCsv(@RequestParam("file") MultipartFile file) {
+        compositionService.addCompositionsFromCsv(file);
+        return ResponseEntity.ok("CSV file processed successfully");
     }
 }

@@ -4,6 +4,7 @@ import com.heating_report.heating_report.composition.dto.CompositionDto;
 import com.heating_report.heating_report.composition.dto.CompositionInWorkDto;
 import com.heating_report.heating_report.composition.dto.NewCompositionDto;
 import com.heating_report.heating_report.composition.dto.UpdateCompositionDto;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 
@@ -22,4 +23,6 @@ public interface CompositionService {
     Iterable<CompositionDto> getCompositionByWork();
     CompositionDto addCompositionInWork(CompositionInWorkDto dto);
     CompositionDto removeCompositionInWork(String id);
+
+    Boolean addCompositionsFromCsv(MultipartFile file);
 }
