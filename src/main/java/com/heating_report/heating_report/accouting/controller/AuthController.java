@@ -22,7 +22,7 @@ import java.util.Random;
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
-@CrossOrigin
+@CrossOrigin(origins = "https://regent.shk.solutions") // Разрешить запросы с этого домена
 public class AuthController {
 
     private final UserAccountService userAccountService;

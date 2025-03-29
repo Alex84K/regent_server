@@ -11,7 +11,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDate;
 
 //@CrossOrigin(origins = "http://localhost:5173")
-@CrossOrigin
+@CrossOrigin(origins = "https://regent.shk.solutions") // Разрешить запросы с этого домена
 @RestController
 @RequestMapping("/api/v1/compositions")
 @RequiredArgsConstructor
