@@ -22,6 +22,7 @@ public class UserEditDto {
     @NotBlank(message = "Last name must contain only letters and spaces")
      String lastName;
      String email;
+     String telefon;
      String image;
      Boolean status;
      String roles;

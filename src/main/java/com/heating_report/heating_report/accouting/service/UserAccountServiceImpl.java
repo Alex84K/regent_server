@@ -161,11 +161,13 @@ public class UserAccountServiceImpl implements UserAccountService, CommandLineRu
         if (data.getStatus() != null && !data.getStatus().equals(userAccount.getStatus())) {
             userAccount.setStatus(data.getStatus());
         }
+        if (data.getTelefon() != null && !data.getTelefon().equals(userAccount.getTelefon())) {
+            userAccount.setTelefon(data.getTelefon());
+        }
+        if (data.getEmail() != null && !data.getEmail().equals(userAccount.getEmail())) {
+            userAccount.setEmail(data.getEmail());
+        }
         userRepository.save(userAccount);
-        Email email = emailRepository.getEmailByUserId(userId);
-        email.setRole(userAccount.getRoles());
-        email.setEmail(userAccount.getEmail());
-        emailRepository.save(email);
         return modelMapper.map(userAccount, UserDto.class);
     }
 

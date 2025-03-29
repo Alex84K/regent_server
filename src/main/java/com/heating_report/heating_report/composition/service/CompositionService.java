@@ -19,7 +19,7 @@ public interface CompositionService {
     Iterable<CompositionDto> getCompositionByName(String name);
     Iterable<CompositionDto> getCompositionByTheme(String theme);
     Iterable<CompositionDto> getCompositionByBook(String book);
-    Iterable<CompositionDto> getCompositionByTime(LocalDate a, LocalDate b);
+    Iterable<CompositionDto> getCompositionsByTime(Integer month, Integer year);
     Iterable<CompositionDto> getCompositionByWork();
     CompositionDto addCompositionInWork(CompositionInWorkDto dto);
     CompositionDto removeCompositionInWork(String id);

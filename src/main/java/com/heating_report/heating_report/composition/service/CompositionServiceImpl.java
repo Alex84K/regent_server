@@ -19,11 +19,11 @@ import org.springframework.web.server.ResponseStatusException;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
+
+import java.io.*;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.Optional;
 
@@ -125,22 +125,27 @@ public class CompositionServiceImpl implements CompositionService {
     }
 
     @Override
-    public Iterable<CompositionDto> getCompositionByTime(LocalDate before, LocalDate after) {
+    public Iterable<CompositionDto> getCompositionsByTime(Integer month, Integer year) {
+        // Вычисляем начало и конец месяца
+        LocalDate startOfMonth = LocalDate.of(year, month, 1); // Начало месяца
+        LocalDate endOfMonth = startOfMonth.withDayOfMonth(startOfMonth.lengthOfMonth()); // Конец месяца
+
         return compositionRepository.findAll().stream() // Получаем поток всех композиций
                 .filter(composition -> {
                     LocalDate lastPerformedDate = composition.getLastData(); // Предположим, что это поле существует
                     return lastPerformedDate != null // Проверяем, что дата не null
-                            && !lastPerformedDate.isBefore(after) // Дата не раньше нижней границы
-                            && !lastPerformedDate.isAfter(before); // Дата не позже верхней границы
+                            && !lastPerformedDate.isBefore(startOfMonth) // Дата не раньше начала месяца
+                            && !lastPerformedDate.isAfter(endOfMonth); // Дата не позже конца месяца
                 })
                 .map(composition -> modelMapper.map(composition, CompositionDto.class)) // Преобразуем Composition в CompositionDto
                 .toList(); // Преобразуем поток в список
     }
 
+
     @Override
     public Iterable<CompositionDto> getCompositionByWork() {
         return compositionRepository.findAll().stream() // Получаем поток всех композиций
-                .filter(composition -> composition.getInWork().equals(true)) // Фильтруем по имени (без учета регистра)
+                .filter(composition -> Boolean.TRUE.equals(composition.getInWork())) // Проверка на null и фильтрация по значению true
                 .map(composition -> modelMapper.map(composition, CompositionDto.class))
                 .toList();
     }
@@ -182,32 +187,35 @@ public class CompositionServiceImpl implements CompositionService {
 
     @Override
     public Boolean addCompositionsFromCsv(MultipartFile file) {
-        try (Reader reader = new InputStreamReader(file.getInputStream())) {
-            CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withDelimiter(',').withFirstRecordAsHeader());
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] values = line.split(","); // Разделитель - запятая
 
-            for (CSVRecord csvRecord : csvParser) {
-                // Extract fields from CSV
-                String name = csvRecord.get(0);  // First column is name
-                String book = csvRecord.get(1);   // Third column is book
-                String number = csvRecord.get(2); // Second column is number
+                if (values.length < 4) continue; // Пропускаем некорректные строки
 
-                String theme = csvRecord.get(3);  // Fourth column is theme
+                String name = values[0].replaceAll("^\"|\"$", "").trim();
+                String book = values[1].replaceAll("^\"|\"$", "").trim();
+                String number = values[2].replaceAll("^\"|\"$", "").trim();
+                String theme = values[3].replaceAll("^\"|\"$", "").trim();
 
-                // Create NewCompositionDto object
-                NewCompositionDto dto = new NewCompositionDto(name, book, number, theme);
-
-                // Check if composition already exists
-                Optional<Composition> existingComposition = compositionRepository.findByBookAndNumber(dto.getBook(), dto.getNumber());
+                // Проверяем, существует ли композиция
+                Optional<Composition> existingComposition = compositionRepository.findByBookAndNumber(book, number);
                 if (existingComposition.isPresent()) {
-                    continue; // Skip if the composition already exists
+                    continue; // Пропускаем дубликаты
                 }
 
-                // Map to Composition entity
-                Composition composition = modelMapper.map(dto, Composition.class);
-                composition.setLastData(LocalDate.now()); // Set current date
-                composition.setInWork(false); // By default, it's not in work
+                // Создаем новую сущность
+                Composition composition = new Composition();
+                composition.setName(name);
+                composition.setBook(book);
+                composition.setNumber(number);
+                composition.setTheme(theme);
+                composition.setLastData(LocalDate.now());
+                composition.setInWork(false);
+                composition.setLastDirigent(""); // По умолчанию пустое значение
 
-                // Save to repository
+                // Сохраняем в базу
                 compositionRepository.save(composition);
             }
             return true;

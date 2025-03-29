@@ -59,9 +59,9 @@ public class CompositionController {
         return compositionService.getCompositionByBook(book);
     }
 
-    @GetMapping("/clooks")
-    public Iterable<CompositionDto> getCompositionByTime(CompositionsDateDto date) {
-        return compositionService.getCompositionByTime(date.getBefore(), date.getAfter());
+    @GetMapping("/months/{month}/years/{year}")
+    public Iterable<CompositionDto> getCompositionsByTime(@PathVariable Integer month, @PathVariable Integer year) {
+        return compositionService.getCompositionsByTime(month, year);
     }
 
     @GetMapping("/works")
@@ -70,7 +70,7 @@ public class CompositionController {
     }
 
     @PostMapping("/works")
-    public CompositionDto getCompositionInWork(@RequestBody CompositionInWorkDto dto){
+    public CompositionDto addCompositionInWork(@RequestBody CompositionInWorkDto dto){
         return compositionService.addCompositionInWork(dto);
     }
 
